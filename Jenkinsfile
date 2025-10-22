@@ -15,18 +15,6 @@ pipeline {
             }
         }
 
-        stage('Install unzip if needed') {
-            steps {
-                sh '''
-                    if ! command -v unzip &> /dev/null
-                    then
-                        echo "unzip not found — installing..."
-                        sudo apt-get update && sudo apt-get install -y unzip
-                    fi
-                '''
-            }
-        }
-
         stage('Build Backend Docker Image') {
             steps {
                 dir('backend') {
