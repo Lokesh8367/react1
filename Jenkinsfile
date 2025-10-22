@@ -11,15 +11,22 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                // Checkout your GitHub repo
                 git branch: 'main', url: 'https://github.com/Lokesh8367/react1.git'
             }
         }
 
         stage('Build Backend Docker Image') {
             steps {
+                // Build backend Docker image from backend/Dockerfile
                 dir('backend') {
                     script {
-                        docker.build("${BACKEND_IMAGE}:latest")
+                        // Ensure Dockerfile exists in backend/
+                        if (fileExists('Dockerfile')) {
+                            docker.build("${BACKEND_IMAGE}:latest")
+                        } else {
+                            error "Backend Dockerfile not found!"
+                        }
                     }
                 }
             }
@@ -27,9 +34,15 @@ pipeline {
 
         stage('Build Frontend Docker Image') {
             steps {
+                // Build frontend Docker image from frontend/Dockerfile
                 dir('frontend') {
                     script {
-                        docker.build("${FRONTEND_IMAGE}:latest")
+                        // Ensure Dockerfile exists in frontend/
+                        if (fileExists('Dockerfile')) {
+                            docker.build("${FRONTEND_IMAGE}:latest")
+                        } else {
+                            error "Frontend Dockerfile not found!"
+                        }
                     }
                 }
             }
@@ -37,10 +50,12 @@ pipeline {
 
         stage('Stop & Remove Old Containers') {
             steps {
-                sh "docker stop ${BACKEND_CONTAINER} || true"
-                sh "docker rm ${BACKEND_CONTAINER} || true"
-                sh "docker stop ${FRONTEND_CONTAINER} || true"
-                sh "docker rm ${FRONTEND_CONTAINER} || true"
+                sh """
+                    docker stop ${BACKEND_CONTAINER} || true
+                    docker rm ${BACKEND_CONTAINER} || true
+                    docker stop ${FRONTEND_CONTAINER} || true
+                    docker rm ${FRONTEND_CONTAINER} || true
+                """
             }
         }
 
