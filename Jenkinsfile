@@ -15,7 +15,14 @@ pipeline {
 
         stage('Unzip Source Code') {
             steps {
-                sh 'unzip -o react-node-docker-app.zip -d app'
+                sh '''
+                    if ! command -v unzip &> /dev/null
+                    then
+                        echo "unzip not found — installing..."
+                        apt-get update && apt-get install -y unzip
+                    fi
+                    unzip -o react-node-docker-app.zip -d app
+                '''
             }
         }
 
