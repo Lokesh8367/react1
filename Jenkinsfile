@@ -2,28 +2,23 @@ pipeline {
     agent any
 
     environment {
-        BACKEND_IMAGE = "react-node-backend"
-        FRONTEND_IMAGE = "react-node-frontend"
-        BACKEND_CONTAINER = "react-node-backend-container"
-        FRONTEND_CONTAINER = "react-node-frontend-container"
+        BACKEND_IMAGE = "node-api"
+        FRONTEND_IMAGE = "react-app"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Checkout your GitHub repo
                 git branch: 'main', url: 'https://github.com/Lokesh8367/react1.git'
             }
         }
 
         stage('Build Backend Docker Image') {
             steps {
-                // Build backend Docker image from backend/Dockerfile
                 dir('backend') {
                     script {
-                        // Ensure Dockerfile exists in backend/
                         if (fileExists('Dockerfile')) {
-                            docker.build("${BACKEND_IMAGE}:latest")
+                            sh 'docker build -t $BACKEND_IMAGE .'
                         } else {
                             error "Backend Dockerfile not found!"
                         }
@@ -34,12 +29,10 @@ pipeline {
 
         stage('Build Frontend Docker Image') {
             steps {
-                // Build frontend Docker image from frontend/Dockerfile
                 dir('frontend') {
                     script {
-                        // Ensure Dockerfile exists in frontend/
                         if (fileExists('Dockerfile')) {
-                            docker.build("${FRONTEND_IMAGE}:latest")
+                            sh 'docker build -t $FRONTEND_IMAGE .'
                         } else {
                             error "Frontend Dockerfile not found!"
                         }
@@ -48,36 +41,29 @@ pipeline {
             }
         }
 
-        stage('Stop & Remove Old Containers') {
+        stage('Run Containers') {
             steps {
-                sh """
-                    docker stop ${BACKEND_CONTAINER} || true
-                    docker rm ${BACKEND_CONTAINER} || true
-                    docker stop ${FRONTEND_CONTAINER} || true
-                    docker rm ${FRONTEND_CONTAINER} || true
-                """
-            }
-        }
+                script {
+                    // stop & remove old ones if exist
+                    sh 'docker stop backend || true && docker rm backend || true'
+                    sh 'docker stop frontend || true && docker rm frontend || true'
 
-        stage('Run Backend Container') {
-            steps {
-                sh "docker run -d --name ${BACKEND_CONTAINER} -p 5000:5000 ${BACKEND_IMAGE}:latest"
-            }
-        }
+                    // run backend
+                    sh 'docker run -d --name backend -p 5000:5000 $BACKEND_IMAGE'
 
-        stage('Run Frontend Container') {
-            steps {
-                sh "docker run -d --name ${FRONTEND_CONTAINER} -p 3000:3000 ${FRONTEND_IMAGE}:latest"
+                    // run frontend
+                    sh 'docker run -d --name frontend -p 3000:3000 $FRONTEND_IMAGE'
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Deployment successful!'
+            echo "✅ Deployment Successful!"
         }
         failure {
-            echo '❌ Deployment failed!'
+            echo "❌ Deployment Failed!"
         }
     }
 }
